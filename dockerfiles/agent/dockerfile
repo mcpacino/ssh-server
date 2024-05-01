@@ -1,4 +1,5 @@
-FROM portainer/agent:alpine as original_agent
+FROM portainerci/agent:develop as original_agent
+# FROM portainer/agent:alpine as original_agent
 
 FROM ubuntu:22.04
 

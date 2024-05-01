@@ -2,5 +2,5 @@
 
 minikube status --profile=devkit-k8s || minikube start --ports=127.0.0.1:30022:30022 --profile=devkit-k8s
 
-kubectl get namespaces portainer || kubectl apply -f portainer-k8s-agent.yaml
+kubectl get namespaces portainer || (kubectl apply -f portainer-k8s-agent.yaml && sleep 10)
 

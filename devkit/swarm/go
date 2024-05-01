@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+
+
+docker network inspect portainer_agent_network || \
+docker network create \
+  --driver overlay \
+  portainer_agent_network
+
+
+docker service inspect devkit-swarm || \
+docker service create \
+  --name devkit-swarm \
+  --network portainer_agent_network \
+  -p 29022:22 \
+  -p 29000:9000 \
+  -p 28000:8000 \
+  -p 29001:9001 \
+  --mode global \
+  --mount type=bind,src=//var/run/docker.sock,dst=/var/run/docker.sock \
+  mcpacino/portainer-devkit-agent

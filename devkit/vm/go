@@ -1,0 +1,76 @@
+#!/usr/bin/env sh
+
+# usage:
+#   go <vm_name> [swarm]
+
+# create docker VM:
+#   go vm1 
+
+# create swarm VMs:
+#   go vm1 swarm
+#   go vm2 swarm
+
+
+orb_run() {
+  orb -u root -m $VM_NAME $*
+}
+
+orb_run_vm1() {
+  orb -u root -m vm1 $*
+}
+
+go() {
+  # create vm
+  orb create -a arm64 -u root alpine $VM_NAME
+
+  # install docker
+  orb_run apk add docker
+  orb_run service docker start
+  orb_run rc-update add docker
+
+  if $IS_SWARM; then
+    do_swarm
+  else
+    do_docker
+  fi
+
+  # wait for container up
+  sleep 5
+}
+
+do_swarm() {
+  if [[ $VM_NAME == "vm1" ]]; then
+    orb_run docker swarm init
+
+    orb_run docker network create \
+      --driver overlay \
+      portainer_agent_network
+
+    orb_run docker service create \
+      --name devkit-swarm \
+      --mode global \
+      --network portainer_agent_network \
+      -p 9001:9001 \
+      -p mode=host,target=22,published=22 \
+      --mount type=bind,src=//var/run/docker.sock,dst=/var/run/docker.sock \
+      mcpacino/portainer-devkit-agent
+  else
+    join_cmd=$(orb_run_vm1 docker swarm join-token worker  | grep "join")
+    eval "orb_run $join_cmd"
+  fi
+}
+
+do_docker() {
+  orb_run docker run -d --rm \
+    --name devkit-docker \
+    --hostname devkit-docker \
+    -p 22:22 -p 9001:9001 \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    mcpacino/portainer-devkit-agent
+}
+
+
+VM_NAME="${1:-vm1}"
+IS_SWARM=$([[ "$2" == "swarm" ]])
+
+orb info $VM_NAME || go

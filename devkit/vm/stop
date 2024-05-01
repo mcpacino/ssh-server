@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+VM_NAME="${1:-vm1}"
+orb delete -f  $VM_NAME
