@@ -28,7 +28,7 @@ go() {
   orb_run service docker start
   orb_run rc-update add docker
 
-  if $IS_SWARM; then
+  if [[ $AGENT_MODE == "swarm" ]]; then
     do_swarm
   else
     do_docker
@@ -66,11 +66,14 @@ do_docker() {
     --hostname devkit-docker \
     -p 22:22 -p 9001:9001 \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    --privileged \
+    -v /:/host \
     mcpacino/portainer-devkit-agent
 }
 
 
+set -x
 VM_NAME="${1:-vm1}"
-IS_SWARM=$([[ "$2" == "swarm" ]])
+AGENT_MODE="${2:-docker}"
 
 orb info $VM_NAME || go
